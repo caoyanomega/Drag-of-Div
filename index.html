@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<script src="lib/jquery/jquery.js"></script>
+	<style>
+		*{
+			margin:0;
+			padding:0;
+			box-sizing:border-box;
+		}
+		body,html{
+			width: 100%;
+			height: 100%;
+		}
+		.fatherTop{
+			top:100px;
+			left:100px;
+			position: relative;
+			width:500px;
+			height:500px;
+			border: 1px solid yellow;
+			background: green;
+		}
+		.father{
+			top:100px;
+			left:100px;
+			position: relative;
+			width:300px;
+			height:300px;
+			border: 1px solid black;
+			background: red;
+		}
+		.div1{
+			position: absolute;
+			left: 100px;
+			top: 100px;
+			width: 100px;
+			height: 100px;
+			background: blue;
+			border:5px solid black;
+		}
+		.div2{
+			position: absolute;
+			left: 20px;
+			top: 20px;
+			width: 50px;
+			height: 50px;
+			background: green;
+			border:5px solid black;
+		}
+		/*禁止文字选中,防止拖动框出现异常*/
+		/*html,body{-moz-user-select: none; -khtml-user-select: none; user-select: none;}*/
+	</style>
+</head>
+<body>
+	
+	<div class="fatherTop">
+		<div class="father">
+			<div class="div1">
+				<div class="div2" >
+					拖拽区域
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+		<script>
+
+		//注意一点：使用说明：
+		//被拖拽元素和父元素一定都要是非static定位哦。
+		//两者一定要是相邻的祖先元素哦。否则会出问题的。
+		/*selfDefineDrag({
+			target:".father", //需要拖拽的目标div
+			targetDragWhere:".div1",  //拖拽目标div的位置哪一块，需要是他内部的或者本身的哪一块
+			father:"body"  //拖拽元素的父元素受限制的范围。
+		});*/
+		
+		//自定义拖拽(基于jquery)：需要目标是绝对定位哦
+		function selfDefineDrag(obj){
+			//需要拖拽的目标对象div
+			var target=obj.target;
+			//可拖拽目标对象的哪一部分
+			var targetDragWhere=obj.targetDragWhere;
+			//可拖拽目标的限制范围的盒子div
+			var father=obj.father;
+			$(targetDragWhere).css({
+				userSelect: 'none'
+			});
+
+			$(targetDragWhere).mousedown(function(e) {
+				e.stopPropagation();//注释掉该行将会产生冒泡行为哦
+				//定义光标
+				$(targetDragWhere).css({cursor: 'move'});
+				//先计算两个盒子的宽高
+				var targetWidth=$(target).width();
+				var targetHeight=$(target).height();
+				var fatherWidth=$(father).width();
+				var fatherHeight=$(father).height();
+				//获取father盒子四个边框的宽度
+				// var fatherBorderLeft=$(father).css('border-left-width').slice(0,-2);
+				// var fatherBorderRight=$(father).css('border-right-width').slice(0,-2);
+				// var fatherBorderTop=$(father).css('border-top-width').slice(0,-2);
+				// var fatherBorderBottom=$(father).css('border-bottom-width').slice(0,-2);	
+
+				//获取target盒子四个边框的宽度
+				var targetBorderLeft=$(target).css('border-left-width').slice(0,-2);
+				var targetBorderRight=$(target).css('border-right-width').slice(0,-2);
+				var targetBorderTop=$(target).css('border-top-width').slice(0,-2);
+				var targetBorderBottom=$(target).css('border-bottom-width').slice(0,-2);				
+				//临界宽高
+				var minLeft=0;
+				var minTop=0;
+				var maxLeft=fatherWidth-targetWidth-targetBorderLeft-targetBorderRight;
+				var maxTop=fatherHeight-targetHeight-targetBorderTop-targetBorderBottom;
+
+				var eX=e.pageX;
+				var eY=e.pageY;
+				
+				//定位初始位置-注意不要使用jQuery的offset()-这是相对html文档
+				var disX=$(target).position().left;
+				var disY=$(target).position().top;
+
+				//计算父盒子的临界宽高(距离文档)
+				// var fatherLeft=$(father).offset().left;
+				// var fatherTop=$(father).offset().top;
+				// var fatherRight=fatherLeft+fatherWidth;
+				// var fatherBottom=fatherLeft+fatherWidth;
+				//只有在鼠标按下的瞬间才会绑定事件,松开按钮后事件释放
+				document.onmousemove=function(e){
+					//这种做法不太妥当
+					// var targetX=e.pageX-disX;
+					// var targetY=e.pageY-disY;
+					
+
+					//光标的位移
+					var eNowX=e.pageX;
+					var eNowY=e.pageY;
+					$(targetDragWhere).css({cursor: 'move'});
+					var targetX=eNowX-eX+disX;
+					var targetY=eNowY-eY+disY;
+				
+					// 碰撞检测
+					if(targetX>=maxLeft){
+						$(target).css({
+							left: maxLeft+"px"
+						});
+					}else if(targetX<=0){
+						$(target).css({
+							left: 0,
+						});
+					}else{
+						$(target).css({
+							left: targetX+"px"
+						});						
+					}
+
+					if(targetY>=maxTop){
+						$(target).css({
+							top: maxTop+"px"
+						});
+					}else if(targetY<=0){
+						$(target).css({
+							top: 0
+						});
+					}else{
+						$(target).css({
+							top: targetY+"px"
+						});						
+					}
+	
+				}
+
+				document.onmouseup=function(ev){
+					$(targetDragWhere).css({
+						cursor: 'default'
+					});
+					document.onmousemove=null;
+					document.onmouseup=null;
+				}
+			});
+
+		}
+
+		selfDefineDrag({
+			target:".father",
+			targetDragWhere:".div1",
+			father:".fatherTop"
+		});
+		selfDefineDrag({
+			target:".div2",
+			targetDragWhere:".div2",
+			father:".div1"
+		});
+	</script>
+</body>
+</html>
